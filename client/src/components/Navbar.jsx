@@ -1,0 +1,51 @@
+import { React ,useContext,useState }from 'react'
+import {assets} from "../assets/assets"
+import { Link ,useNavigate} from 'react-router-dom'
+import { AppContext } from '../context/AppContext'
+
+const Navbar = () => {
+    const {user }=useContext(AppContext)
+    const navigate = useNavigate();
+
+  return (
+    <div className='flex justify-between items-center py-4'>
+        <Link to="/">
+        <img src={assets.logo} alt="" className='w-28 sm:w-32 lg:w-40' />
+        </Link>
+
+
+        <div>
+            {
+                user ?
+                <div onClick={()=>navigate('/buy')} className='flex gap-2 items-center sm:gap-3'>
+                    <button className='flex items-center gap-2  bg-blue-100 px-4 sm:px-5 py-1.5 sm:py-3 rounded-full hover:scale-105 transition-all duration-700'>
+                        <img className='w-5' src={assets.credit_star} alt="" />
+                        <p className='text-xs sm:text-sm font-medium text-gray-700'>Credit Left:50</p>
+                    </button>
+                    <p className='text-gray-700 max-sm:hidden pl-4'>Hii,Milind</p>
+                    <div className='relative group'>
+                        <img className='w-10 drop-shadow ' src={assets.profile_icon} alt="" />
+                        <div className='absolute hidden group-hover:block top-0 right=0 z-10 text-black rounded pt-12'>
+                            <ul className='list-none p-2 bg-white rounded-md border text-sm m-0'>
+                                <li className='py-1 px-2 pr-10 cursor-pointer'>LogOut</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+                :
+                <div className='flex gap-4 items-center sm:gap-8'>
+                    <p onClick={()=> navigate('/buy')} className='curser-pointer'>Pricing</p>
+                    <button className='bg-zinc-800 text-white px-7 py-2 sm:px-10 text-sm rounded-full'>Login</button>
+                </div>
+
+            }
+            
+            
+
+        </div>
+    </div>
+  )
+}
+
+export default Navbar
