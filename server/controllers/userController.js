@@ -67,19 +67,34 @@ const loginUser = async (req, res) => {
 
 // API Controller function to get user available credits data
 const userCredits = async (req, res) => {
-    try {
-
-        const { userId } = req.body
-
-        // Fetching userdata using userId
-        const user = await userModel.findById(userId)
-        res.json({ success: true, credits: user.creditBalance, user: { name: user.name } })
-
-    } catch (error) {
-        console.log(error.message)
-        res.json({ success: false, message: error.message })
+  try {
+    const { userId } = req.query;
+    console.log('userId:', userId, 'req.userId:', req.userId);
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'Missing userId' });
     }
-}
+    // Validate that userId matches authenticated user
+    if (userId !== req.userId.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized: Invalid userId' });
+    }
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (typeof user.creditBalance === 'undefined') {
+      user.creditBalance = 10; // Set default
+      await user.save();
+    }
+    res.json({
+      success: true,
+      credits: user.creditBalance,
+      user: { name: user.name },
+    });
+  } catch (error) {
+    console.error('Error in userCredits:', error.message);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
 
 // razorpay gateway initialize
 const razorpayInstance = new razorpay({

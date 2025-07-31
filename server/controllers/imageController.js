@@ -1,52 +1,72 @@
-import axios from 'axios'
-import fs from 'fs'
-import FormData from 'form-data'
-import userModel from '../models/userModel.js'
+import axios from 'axios';
+import fs from 'fs';
+import FormData from 'form-data';
+import userModel from '../models/userModel.js';
 
 // Controller function to generate image from prompt
 // http://localhost:4000/api/image/generate-image
 export const generateImage = async (req, res) => {
-
   try {
+    // Use userId from authenticated user (set by authUser middleware)
+    const userId = req.user._id;
+    const { prompt } = req.body;
 
-    const { userId, prompt } = req.body
-
-    // Fetching User Details Using userId
-    const user = await userModel.findById(userId)
-    
-    if (!user || !prompt) {
-      return res.json({ success: false, message: 'Missing Details' })
+    // Validate input
+    if (!prompt) {
+      return res.status(400).json({ success: false, message: 'Prompt is required' });
     }
 
-    // Checking User creditBalance
-    if (user.creditBalance === 0 || userModel.creditBalance < 0) {
-      return res.json({ success: false, message: 'No Credit Balance', creditBalance: user.creditBalance })
+    // Fetch user details
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Creation of new multi/part formdata
-    const formdata = new FormData()
-    formdata.append('prompt', prompt)
+    // Check credit balance
+    if (user.creditBalance < 1) {
+      return res.status(403).json({
+        success: false,
+        message: 'Insufficient credits',
+        creditBalance: user.creditBalance,
+      });
+    }
 
-    // Calling Clipdrop API
-    const { data } = await axios.post('https://clipdrop-api.co/text-to-image/v1', formdata, {
+    // Create FormData for Clipdrop API
+    const formData = new FormData();
+    formData.append('prompt', prompt);
+
+    // Call Clipdrop API
+    const { data } = await axios.post('https://clipdrop-api.co/text-to-image/v1', formData, {
       headers: {
         'x-api-key': process.env.CLIPDROP_API,
+        ...formData.getHeaders(), // Ensure multipart/form-data headers
       },
-      responseType: "arraybuffer"
-    })
+      responseType: 'arraybuffer',
+    });
 
-    // Convertion of arrayBuffer to base64
+    // Convert arrayBuffer to base64
     const base64Image = Buffer.from(data, 'binary').toString('base64');
-    const resultImage = `data:image/png;base64,${base64Image}`
+    const resultImage = `data:image/png;base64,${base64Image}`;
 
-    // Deduction of user credit 
-    await userModel.findByIdAndUpdate(user._id, { creditBalance: user.creditBalance - 1 })
+    // Deduct credit after successful API call
+    user.creditBalance -= 1;
+    await user.save(); // Use save() to ensure atomic update
 
-    // Sending Response
-    res.json({ success: true, message: "Background Removed", resultImage, creditBalance: user.creditBalance - 1 })
-
+    // Send response
+    res.json({
+      success: true,
+      message: 'Image Generated',
+      resultImage,
+      creditBalance: user.creditBalance,
+    });
   } catch (error) {
-    console.log(error.message)
-    res.json({ success: false, message: error.message })
+    console.error('Generate image error:', error.message, error.response?.data || error);
+    if (error.response) {
+      return res.status(error.response.status || 500).json({
+        success: false,
+        message: error.response.data?.message || 'Failed to generate image',
+      });
+    }
+    res.status(500).json({ success: false, message: 'Server error occurred' });
   }
-}
+};
