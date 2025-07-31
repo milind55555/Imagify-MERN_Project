@@ -18,6 +18,8 @@ import cross_icon from './cross_icon.svg'
 import star_group from './star_group.png'
 import credit_star from './credit_star.svg'
 import profile_icon from './profile_icon.png'
+import razorpay_logo from './razorpay_logo.png'
+import stripe_logo from './stripe_logo.png'
 
 export const assets = {
     logo,
@@ -34,7 +36,9 @@ export const assets = {
     cross_icon,
     star_group,
     credit_star,
-    profile_icon
+    profile_icon,
+    razorpay_logo,
+    stripe_logo
 }
 
 export const stepsData = [
@@ -67,7 +71,7 @@ export const testimonialsData = [
         image:profile_img_2,
         name:'Richard Nelson',
         role:'Content Creator',
-        stars:4,
+        stars:5,
         text:`I've been using bg.removal for nearly two years, primarily for Instagram, and it has been incredibly user-friendly, making my work much easier.`
     },
     {
